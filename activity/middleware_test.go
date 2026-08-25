@@ -81,7 +81,7 @@ func TestNewWebMiddlewareAppliesOnlyToWebAndCarriesWrapper(t *testing.T) {
 func TestNewCLIMiddlewareAppliesOnlyToCLIAndCarriesWrapper(t *testing.T) {
 	limit := param.Int("limit", param.Default(10))
 	mw := activity.NewCLIMiddleware[handler]("pagination", func(next handler) handler { return next },
-		activity.ParamBinding{Param: limit, Source: "flag"})
+		activity.ParamBinding{Param: limit, Source: "option"})
 
 	var _ cli.Option = mw
 
@@ -92,8 +92,8 @@ func TestNewCLIMiddlewareAppliesOnlyToCLIAndCarriesWrapper(t *testing.T) {
 	if len(d.Middleware) != 1 || d.Middleware[0].Name != "pagination" {
 		t.Fatalf("Middleware = %+v, want one pagination entry", d.Middleware)
 	}
-	if len(d.Params) != 1 || d.Params[0].Param.Name() != "limit" || d.Params[0].Source != "flag" {
-		t.Fatalf("Params = %+v, want one limit/flag binding", d.Params)
+	if len(d.Params) != 1 || d.Params[0].Param.Name() != "limit" || d.Params[0].Source != "option" {
+		t.Fatalf("Params = %+v, want one limit/option binding", d.Params)
 	}
 
 	if _, ok := activity.CLIWrapper[handler](mw); !ok {
@@ -116,7 +116,7 @@ func TestPortableMiddlewareContributesDistinctParamsAndWrappersPerTarget(t *test
 		},
 		activity.CLISpec[handler]{
 			Wrap:   func(next handler) handler { return next },
-			Params: []activity.ParamBinding{{Param: limit, Source: "flag"}},
+			Params: []activity.ParamBinding{{Param: limit, Source: "option"}},
 		},
 	)
 
@@ -141,7 +141,7 @@ func TestPortableMiddlewareContributesDistinctParamsAndWrappersPerTarget(t *test
 	if len(cd.Middleware) != 1 || cd.Middleware[0].Name != "pagination" {
 		t.Fatalf("cli Middleware = %+v, want one pagination entry", cd.Middleware)
 	}
-	if len(cd.Params) != 1 || cd.Params[0].Source != "flag" {
+	if len(cd.Params) != 1 || cd.Params[0].Source != "option" {
 		t.Fatalf("cli Params = %+v, want source %q", cd.Params, "flag")
 	}
 

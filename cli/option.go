@@ -1,6 +1,6 @@
 // Package cli implements Way2Go's Cobra-backed CLI Activity target: named
-// Activities (Activity) with long-form flag (FromFlag) and fixed positional
-// argument (FromArg) Param bindings, nested command groups (Group) rooted in
+// Activities (Activity) with long-form option (FromOptions) and fixed positional
+// argument (FromArgs) Param bindings, nested command groups (Group) rooted in
 // an App (All), middleware execution, a fixed HandlerFunc/Outcome handler
 // contract, a selective panic-recovery boundary and a deterministic exit
 // code mapping.

@@ -12,7 +12,8 @@ go get github.com/away2go/way2go@v0.1.0
 
 ## Quick start
 
-A Web Activity binds typed parameters to an explicit HTTP route:
+A Web Activity binds typed parameters to an HTML GUI route derived from its
+Activity name and bindings:
 
 ```go
 var Query = param.String("q", param.Describe("Search query text."))
@@ -21,7 +22,6 @@ var Search = web.Activity(
 	"search",
 	search,
 	activity.Describe("Searches for things."),
-	web.Get("/search"),
 	web.FromQuery(Query),
 )
 
@@ -31,7 +31,7 @@ func search(ctx web.Context) web.Response {
 }
 ```
 
-The corresponding CLI Activity binds the same conceptual input to a flag and
+The corresponding CLI Activity binds the same conceptual input to an option and
 uses a CLI-specific handler and outcome:
 
 ```go
@@ -41,7 +41,7 @@ var Search = cli.Activity(
 	"search",
 	search,
 	activity.Describe("Searches for things."),
-	cli.FromFlag(Query),
+	cli.FromOptions(Query),
 )
 
 func search(ctx context.Context) cli.Outcome {
@@ -69,7 +69,6 @@ description, target, Param bindings, and middleware:
 def := web.Activity(
 	"search",
 	search,
-	web.Get("/search"),
 	web.FromQuery(Query),
 )
 
@@ -104,11 +103,10 @@ Bindings map Params to target inputs:
 
 ```go
 web.FromQuery(Query, Limit)
-web.FromPath(ID)
 web.FromForm(Name, Email)
 
-cli.FromFlag(Query, Limit)
-cli.FromArg(ID)
+cli.FromOptions(Query, Limit)
+cli.FromArgs(ID)
 ```
 
 Reusable application-specific Param types can be defined with
@@ -154,15 +152,13 @@ See [`Example_middleware`](example_test.go) for a complete runnable example.
 
 ## Web activities
 
-Web Activities combine explicit HTTP routes with query, path, and form
-bindings:
+Web Activities are deliberately HTML-GUI-oriented. Their path is `/<activity
+name>`; they use GET when all Params come from the query string, and POST when
+one or more Params come from a form:
 
 ```go
-web.Get("/search")
-web.Post("/items")
-web.Put("/items/{id}")
-web.Patch("/items/{id}")
-web.Delete("/items/{id}")
+web.Activity("search", search, web.FromQuery(Query)) // GET /search
+web.Activity("create-item", createItem, web.FromForm(Name)) // POST /create-item
 ```
 
 `web.All` validates routes and bindings, then returns an `http.Handler`.
@@ -171,7 +167,7 @@ The package includes JSON and text renderers.
 
 ## CLI activities
 
-CLI Activities use flags and positional arguments and can be arranged in
+CLI Activities use long options and positional arguments and can be arranged in
 nested command groups:
 
 ```go
@@ -180,7 +176,7 @@ app := cli.All(
 		cli.Activity("list", listItems),
 		cli.Activity("create", createItem),
 	),
-	cli.Activity("search", search, cli.FromFlag(Query)),
+	cli.Activity("search", search, cli.FromOptions(Query)),
 )
 
 status := app.Execute(ctx, args, in, out, errOut)

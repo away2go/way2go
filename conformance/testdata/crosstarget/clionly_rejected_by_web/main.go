@@ -30,5 +30,5 @@ func main() {
 	// compile.
 	_ = web.Activity("audited-web", func(web.Context) web.Response {
 		return web.Render(http.StatusOK, web.Text("ok"))
-	}, web.Get("/audited"), audit)
+	}, audit)
 }

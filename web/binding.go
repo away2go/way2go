@@ -52,13 +52,6 @@ func fromSource(source string, descs []param.AnyDescriptor) Option {
 // multi-value query params.
 func FromQuery(descs ...param.AnyDescriptor) Option { return fromSource("query", descs) }
 
-// FromPath declares and binds one or more Params to named net/http
-// ServeMux route placeholders ("{name}") in the Activity's route path.
-// Registration (All) rejects a path placeholder without a matching
-// FromPath binding, and a FromPath binding without a matching placeholder.
-// A matched path segment is always present.
-func FromPath(descs ...param.AnyDescriptor) Option { return fromSource("path", descs) }
-
 // FromForm declares and binds one or more Params to the request's parsed
 // form body (application/x-www-form-urlencoded or multipart/form-data).
 //

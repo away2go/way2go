@@ -146,7 +146,7 @@ type CLISpec[H any] struct {
 // descriptor on whichever target Builder it is applied to, together with
 // that target's own ParamBindings from web/cli — which is what lets one
 // Param identity (e.g. a package-level Limit descriptor) be bound to a Web
-// query parameter under the same middleware that binds it to a CLI flag —
+// query parameter under the same middleware that binds it to a CLI option —
 // and carries that target's own wrapper for later retrieval with
 // WebWrapper/CLIWrapper.
 //

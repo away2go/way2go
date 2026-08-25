@@ -3,7 +3,7 @@ package param
 import "context"
 
 // RawValue is a single external input already resolved by a target binding
-// (Web query/path/form, CLI flag/arg, ...), before parsing. Present
+// (Web query/form, CLI option/arg, ...), before parsing. Present
 // distinguishes an absent value from an explicitly supplied empty string:
 // the two are never conflated.
 type RawValue struct {

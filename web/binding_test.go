@@ -21,7 +21,7 @@ func TestFromQueryResolvesPresenceAbsenceAndEmptySemantics(t *testing.T) {
 	q := param.String("q")
 	group, err := web.All(web.Activity("search", echoHandler(func(ctx web.Context) string {
 		return param.Read(ctx.Context(), q)
-	}), web.Get("/search"), web.FromQuery(q)))
+	}), web.FromQuery(q)))
 	if err != nil {
 		t.Fatalf("All: %v", err)
 	}
@@ -51,31 +51,11 @@ func TestFromQueryResolvesPresenceAbsenceAndEmptySemantics(t *testing.T) {
 	}
 }
 
-func TestFromPathResolvesPlaceholder(t *testing.T) {
-	id := param.String("id")
-	group, err := web.All(web.Activity("get-item", echoHandler(func(ctx web.Context) string {
-		return param.Read(ctx.Context(), id)
-	}), web.Get("/items/{id}"), web.FromPath(id)))
-	if err != nil {
-		t.Fatalf("All: %v", err)
-	}
-
-	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/items/abc123", nil)
-	group.ServeHTTP(rec, req)
-	if rec.Code != http.StatusOK {
-		t.Fatalf("status = %d, want 200 (body %q)", rec.Code, rec.Body.String())
-	}
-	if rec.Body.String() != "abc123" {
-		t.Fatalf("body = %q, want %q", rec.Body.String(), "abc123")
-	}
-}
-
 func TestFromFormResolvesPresenceAbsenceAndEmptySemantics(t *testing.T) {
 	name := param.String("name")
 	group, err := web.All(web.Activity("create", echoHandler(func(ctx web.Context) string {
 		return param.Read(ctx.Context(), name)
-	}), web.Post("/create"), web.FromForm(name)))
+	}), web.FromForm(name)))
 	if err != nil {
 		t.Fatalf("All: %v", err)
 	}
@@ -113,7 +93,7 @@ func TestFromQueryVariadicDeclaresMultipleParamsAtOnce(t *testing.T) {
 	limit := param.Int("limit", param.Default(10))
 	verbose := param.Bool("verbose", param.Default(false))
 
-	def := web.Activity("search", noopHandler, web.Get("/search"), web.FromQuery(q, limit, verbose))
+	def := web.Activity("search", noopHandler, web.FromQuery(q, limit, verbose))
 	d := def.Descriptor()
 	if len(d.Params) != 3 {
 		t.Fatalf("Params = %+v, want 3 entries from one variadic FromQuery call", d.Params)
@@ -138,7 +118,7 @@ func TestDefaultsAndValidatorsApplyThroughBinding(t *testing.T) {
 	group, err := web.All(web.Activity("list", func(ctx web.Context) web.Response {
 		v := param.Read(ctx.Context(), limit)
 		return web.Render(http.StatusOK, web.Text(itoa(v)))
-	}, web.Get("/list"), web.FromQuery(limit)))
+	}, web.FromQuery(limit)))
 	if err != nil {
 		t.Fatalf("All: %v", err)
 	}
@@ -195,7 +175,7 @@ func TestDuplicateParamNameConflictPanics(t *testing.T) {
 	}()
 	a := param.String("q")
 	b := param.String("q")
-	web.Activity("search", noopHandler, web.Get("/search"), web.FromQuery(a), web.FromQuery(b))
+	web.Activity("search", noopHandler, web.FromQuery(a), web.FromQuery(b))
 }
 
 // TestConflictingSourceConflictPanics proves the same Param identity bound
@@ -207,14 +187,14 @@ func TestConflictingSourceConflictPanics(t *testing.T) {
 		}
 	}()
 	q := param.String("q")
-	web.Activity("search", noopHandler, web.Get("/search"), web.FromQuery(q), web.FromPath(q))
+	web.Activity("search", noopHandler, web.FromQuery(q), web.FromForm(q))
 }
 
 // TestRedeclaringSameBindingIsDeduplicated proves declaring the identical
 // (descriptor, source) pair twice is a no-op, not a conflict.
 func TestRedeclaringSameBindingIsDeduplicated(t *testing.T) {
 	q := param.String("q")
-	def := web.Activity("search", noopHandler, web.Get("/search"), web.FromQuery(q), web.FromQuery(q))
+	def := web.Activity("search", noopHandler, web.FromQuery(q), web.FromQuery(q))
 	if len(def.Descriptor().Params) != 1 {
 		t.Fatalf("Params = %+v, want exactly one deduplicated entry", def.Descriptor().Params)
 	}

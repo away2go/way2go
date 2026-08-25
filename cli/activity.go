@@ -17,7 +17,7 @@ import (
 // requires.
 type Definition struct {
 	descriptor activity.Descriptor
-	flagParams []param.AnyDescriptor // Source == flagSource, declaration order
+	flagParams []param.AnyDescriptor // Source == optionSource, declaration order
 	argParams  []param.AnyDescriptor // Source == argSource, declaration order
 	allParams  []param.AnyDescriptor // full declaration order, for param.Prepare
 	handler    HandlerFunc           // already wrapped with declared middleware, outermost first
@@ -32,7 +32,7 @@ func (d Definition) Descriptor() activity.Descriptor { return d.descriptor }
 func (d Definition) name() string { return d.descriptor.Name }
 
 // Activity declares a CLI Activity named name with handler and the given
-// CLI-capable options (activity.Describe, cli.FromFlag, cli.FromArg, CLI or
+// CLI-capable options (activity.Describe, cli.FromOptions, cli.FromArgs, CLI or
 // portable middleware). It builds directly on activity.New(name, "cli") and
 // Builder.ApplyCLI, exactly as web.Activity builds on
 // activity.New(name, "web") and Builder.ApplyWeb.
@@ -40,7 +40,7 @@ func (d Definition) name() string { return d.descriptor.Name }
 // Activity panics — deterministically, at Activity construction time rather
 // than at first execution — if handler is nil, if any option conflicts (see
 // activity.Builder.DeclareParam and NewCLIBinding/NewCLIMiddleware), or if
-// the Activity's positional (FromArg) Params place a required argument after
+// the Activity's positional (FromArgs) Params place a required argument after
 // an optional one. This mirrors the panic discipline package activity
 // already uses for the same class of registration failure (see
 // declareMiddleware in activity/middleware.go): Options apply with no error
@@ -59,7 +59,7 @@ func Activity(name string, handler HandlerFunc, options ...Option) Definition {
 	for _, pb := range descriptor.Params {
 		allParams = append(allParams, pb.Param)
 		switch pb.Source {
-		case flagSource:
+		case optionSource:
 			flagParams = append(flagParams, pb.Param)
 		case argSource:
 			argParams = append(argParams, pb.Param)
@@ -84,9 +84,9 @@ func Activity(name string, handler HandlerFunc, options ...Option) Definition {
 	}
 }
 
-// validateArgOrder enforces that among an Activity's positional (FromArg)
+// validateArgOrder enforces that among an Activity's positional (FromArgs)
 // Params, every required (no-Default) Param precedes every optional
-// (Default) Param, regardless of how many FromArg calls contributed them.
+// (Default) Param, regardless of how many FromArgs calls contributed them.
 func validateArgOrder(activityName string, argParams []param.AnyDescriptor) {
 	seenOptional := ""
 	for _, p := range argParams {

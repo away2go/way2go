@@ -10,8 +10,8 @@
 // replaced by a default.
 //
 // This package has no knowledge of Web or CLI. Target packages resolve raw
-// values from query strings, form fields, path
-// placeholders, flags or positional arguments, then call Prepare with the
+// values from query strings, form fields, CLI options or positional arguments,
+// then call Prepare with the
 // resulting param.RawValue set.
 package param
 

@@ -25,15 +25,14 @@ func search(ctx web.Context) web.Response {
 }
 
 // exampleSearch declares a Web Activity: a non-empty name, the handler
-// above, an optional description, an explicit v1 route (web.Get) and a
-// query binding (web.FromQuery). Everything after the handler is an
+// above, an optional description and a query binding (web.FromQuery). Its
+// route is derived as GET /search. Everything after the handler is an
 // ordinary Option — there is no mandatory Use(...) or Params(...) wrapper
 // at the declaration site.
 var exampleSearch = web.Activity(
 	"search",
 	search,
 	activity.Describe("Searches for things."),
-	web.Get("/search"),
 	web.FromQuery(exampleQuery),
 )
 
@@ -43,7 +42,7 @@ var exampleSearch = web.Activity(
 // request's URL query string before search's handler ever runs.
 //
 // See cli/example_test.go's Example_search for the same conceptual Query
-// Param bound to a CLI flag instead, with its own independent handler,
+// Param bound to a CLI option instead, with its own independent handler,
 // context type and result kind — there is no shared execution engine
 // between the two.
 func Example_search() {

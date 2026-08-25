@@ -13,7 +13,7 @@ import (
 
 // exampleQuery is the same conceptual search Param as
 // web/example_test.go's exampleQuery — a required-by-default string — but
-// a distinct param.Descriptor[string] identity bound here to a CLI flag
+// a distinct param.Descriptor[string] identity bound here to a CLI option
 // instead of a URL query parameter. Params have no cross-package identity
 // in v1: only the concept, name and type match.
 var exampleQuery = param.String("query", param.Describe("Search query text."))
@@ -30,12 +30,12 @@ func search(ctx context.Context) cli.Outcome {
 
 // exampleSearch is the CLI counterpart of web/example_test.go's
 // exampleSearch: same declarative shape (name, handler, then Options), a
-// different target binding (cli.FromFlag instead of web.FromQuery).
+// different target binding (cli.FromOptions instead of web.FromQuery).
 var exampleSearch = cli.Activity(
 	"search",
 	search,
 	activity.Describe("Searches for things."),
-	cli.FromFlag(exampleQuery),
+	cli.FromOptions(exampleQuery),
 )
 
 // Example_search runs the command tree built from one CLI Activity exactly

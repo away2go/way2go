@@ -58,10 +58,10 @@ func (d descOption) applyWeb(b *Builder) { b.description = d.text }
 func (d descOption) applyCLI(b *Builder) { b.description = d.text }
 
 // NewCLIBinding builds a CLI-only Option that declares each of ds as a Param
-// bound to source (e.g. "flag", "arg") on whichever CLI Builder it is
+// bound to source (e.g. "option", "arg") on whichever CLI Builder it is
 // applied to. Unlike NewCLIMiddleware, it contributes no Middleware
 // descriptor entry and carries no execution wrapper: it exists for CLI
-// target-binding options (see cli.FromFlag and cli.FromArg) that
+// target-binding options (see cli.FromOptions and cli.FromArgs) that
 // only need to attach ParamBindings, the same way NewWebMiddleware/
 // NewCLIMiddleware/NewMiddleware are the only way outside this package to
 // attach a Middleware descriptor entry — CLIOption's applyCLI method is

@@ -43,7 +43,7 @@ func TestUndeclaredReadProducesSameProgrammerErrorIdentityAcrossTargets(t *testi
 		}()
 		_ = param.Read(ctx.Context(), stray)
 		return web.Render(http.StatusOK, web.Text("unreachable"))
-	}, web.Get("/boom")))
+	}))
 	if err != nil {
 		t.Fatalf("web.All: %v", err)
 	}

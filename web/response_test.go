@@ -95,7 +95,7 @@ func TestRedirectSetsStatusAndLocation(t *testing.T) {
 func writeResponse(resp web.Response, rec *httptest.ResponseRecorder) {
 	group, err := web.All(web.Activity("respond", func(web.Context) web.Response {
 		return resp
-	}, web.Get("/respond")))
+	}))
 	if err != nil {
 		panic(err)
 	}

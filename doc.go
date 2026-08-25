@@ -15,7 +15,7 @@
 //   - param: typed Param descriptors (String, Int, Bool), defaults,
 //     validators, preparation of raw external input into a validated typed
 //     value set, and Read access to that prepared set from a handler.
-//   - web: Web Activities — explicit net/http routes, query/path/form Param
+//   - web: HTML GUI Activities — derived GET/POST routes, query/form Param
 //     bindings, direct middleware Options, a Way2Go-owned Context and
 //     Response, a selective panic-recovery boundary, and registration into
 //     a validated, dependency-free http.Handler Group.

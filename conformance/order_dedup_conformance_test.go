@@ -22,7 +22,7 @@ func TestMiddlewareDeclarationOrderIsIdenticalAcrossTargets(t *testing.T) {
 		activity.CLISpec[cli.HandlerFunc]{Wrap: func(next cli.HandlerFunc) cli.HandlerFunc { return next }},
 	)
 
-	webDef := web.Activity("ordered", noopWebHandler, web.Get("/ordered"), auth, pagination)
+	webDef := web.Activity("ordered", noopWebHandler, auth, pagination)
 	cliDef := cli.Activity("ordered", noopCLIHandler, auth, pagination)
 
 	wantOrder := []string{"auth", "pagination"}
@@ -49,7 +49,7 @@ func TestPortableMiddlewareParamDedupAcrossTargets(t *testing.T) {
 	limit := param.Int("limit", param.Default(1))
 	mw := newPaginationMiddleware(limit, nil)
 
-	webDef := web.Activity("dedup", noopWebHandler, web.Get("/dedup"), mw, mw)
+	webDef := web.Activity("dedup", noopWebHandler, mw, mw)
 	cliDef := cli.Activity("dedup", noopCLIHandler, mw, mw)
 
 	if n := len(webDef.Descriptor().Params); n != 1 {
@@ -62,29 +62,29 @@ func TestPortableMiddlewareParamDedupAcrossTargets(t *testing.T) {
 
 // TestConflictingParamSourceFailsConsistentlyOnBothTargets proves that
 // binding the same Param identity the
-// portable middleware already bound (query on Web, flag on CLI) to a
+// portable middleware already bound (query on Web, option on CLI) to a
 // second, different source is a genuine conflict, and it fails registration
 // — deterministically, at Activity construction — the same way on both
 // targets.
 func TestConflictingParamSourceFailsConsistentlyOnBothTargets(t *testing.T) {
 	limit := param.Int("limit", param.Default(1))
-	mw := newPaginationMiddleware(limit, nil) // query (web) / flag (cli)
+	mw := newPaginationMiddleware(limit, nil) // query (web) / option (cli)
 
-	t.Run("web: query binding then a conflicting path binding panics", func(t *testing.T) {
+	t.Run("web: query binding then a conflicting form binding panics", func(t *testing.T) {
 		defer func() {
 			if recover() == nil {
 				t.Fatal("expected a panic for a conflicting Param source on Web")
 			}
 		}()
-		web.Activity("conflict", noopWebHandler, web.Get("/conflict/{limit}"), mw, web.FromPath(limit))
+		web.Activity("conflict", noopWebHandler, mw, web.FromForm(limit))
 	})
 
-	t.Run("cli: flag binding then a conflicting arg binding panics", func(t *testing.T) {
+	t.Run("cli: option binding then a conflicting arg binding panics", func(t *testing.T) {
 		defer func() {
 			if recover() == nil {
 				t.Fatal("expected a panic for a conflicting Param source on CLI")
 			}
 		}()
-		cli.Activity("conflict", noopCLIHandler, mw, cli.FromArg(limit))
+		cli.Activity("conflict", noopCLIHandler, mw, cli.FromArgs(limit))
 	})
 }

@@ -27,7 +27,7 @@ import (
 // unchanged, as both a web.Option and a cli.Option throughout this package
 // (API contract). Applied to a Web Activity it contributes limit
 // as a query binding; applied to a CLI Activity it contributes the very same
-// limit identity as a flag binding. Each target gets its own independent
+// limit identity as an option binding. Each target gets its own independent
 // execution wrapper — there is no shared handler type between them, only the
 // shared param.Descriptor[int] identity and the shared Middleware{Name:
 // "pagination"} descriptor entry. trace may be nil when a test only cares
@@ -55,7 +55,7 @@ func newPaginationMiddleware(limit param.Descriptor[int], trace *[]string) activ
 					return next(ctx)
 				}
 			},
-			Params: []activity.ParamBinding{{Param: limit, Source: "flag"}},
+			Params: []activity.ParamBinding{{Param: limit, Source: "option"}},
 		},
 	)
 }

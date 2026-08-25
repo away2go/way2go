@@ -19,7 +19,7 @@ import (
 //
 // web.Definition.Descriptor() returns web.Descriptor, a distinct Go type
 // from activity.Descriptor: it conveys "this is the Web side" structurally,
-// through its own Method/Path/HasRoute route fields, rather than through a
+// through its own derived Method/Path route fields, rather than through a
 // Target string field (see web.Descriptor's doc comment) — cli.Definition.
 // Descriptor() returns activity.Descriptor directly, which does carry an
 // explicit Target field. That structural difference plus CLI's explicit
@@ -29,7 +29,7 @@ func TestCrossTargetDescriptorsShareConceptualIdentity(t *testing.T) {
 	limit := param.Int("limit", param.Default(10), param.Describe("max rows to return"))
 	mw := newPaginationMiddleware(limit, nil)
 
-	webDef := web.Activity("list", noopWebHandler, web.Get("/list"), activity.Describe("Lists things."), mw)
+	webDef := web.Activity("list", noopWebHandler, activity.Describe("Lists things."), mw)
 	cliDef := cli.Activity("list", noopCLIHandler, activity.Describe("Lists things."), mw)
 
 	wd := webDef.Descriptor()
@@ -45,7 +45,7 @@ func TestCrossTargetDescriptorsShareConceptualIdentity(t *testing.T) {
 	if cd.Target != "cli" {
 		t.Fatalf("cli Target = %q, want %q", cd.Target, "cli")
 	}
-	if !wd.HasRoute || wd.Method != http.MethodGet || wd.Path != "/list" {
+	if wd.Method != http.MethodGet || wd.Path != "/list" {
 		t.Fatalf("web descriptor missing its Web-specific route: %+v", wd)
 	}
 
@@ -67,7 +67,7 @@ func TestCrossTargetDescriptorsShareConceptualIdentity(t *testing.T) {
 	if wp.Source != "query" {
 		t.Fatalf("web Source = %q, want %q", wp.Source, "query")
 	}
-	if cp.Source != "flag" {
+	if cp.Source != "option" {
 		t.Fatalf("cli Source = %q, want %q", cp.Source, "flag")
 	}
 

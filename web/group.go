@@ -35,13 +35,8 @@ func (g Group) Definitions() []Definition {
 // All validates definitions and, if they are all consistent, returns the
 // resulting Group. It rejects:
 //
-//   - any construction-time conflict a Definition already carries (e.g.
-//     more than one route option applied to the same Activity);
 //   - an empty or duplicate Activity name;
-//   - a missing route (Activity built with no Get/Post/... option);
 //   - a duplicate method/path pair across Definitions;
-//   - a net/http ServeMux "{name}" route placeholder with no matching
-//     FromPath binding, or a FromPath binding with no matching placeholder.
 //
 // All is the final validation boundary for the effective descriptor:
 // definitions fail deterministically here, before any Group ever serves a
@@ -52,9 +47,6 @@ func All(definitions ...Definition) (Group, error) {
 	routes := make(map[string]struct{}, len(definitions))
 
 	for _, d := range definitions {
-		if d.err != nil {
-			return Group{}, fmt.Errorf("web: activity %q: %w", d.descriptor.Name, d.err)
-		}
 		if strings.TrimSpace(d.descriptor.Name) == "" {
 			return Group{}, errors.New("web: activity name must not be empty")
 		}
@@ -63,61 +55,16 @@ func All(definitions ...Definition) (Group, error) {
 		}
 		names[d.descriptor.Name] = struct{}{}
 
-		if !d.descriptor.HasRoute {
-			return Group{}, fmt.Errorf("web: activity %q: missing route (use web.Get, web.Post, web.Put, web.Patch or web.Delete)", d.descriptor.Name)
-		}
-
 		key := d.descriptor.Method + " " + d.descriptor.Path
 		if _, dup := routes[key]; dup {
 			return Group{}, fmt.Errorf("web: duplicate route %s", key)
 		}
 		routes[key] = struct{}{}
 
-		if err := validatePlaceholders(d.descriptor.Path, d.descriptor.Params); err != nil {
-			return Group{}, fmt.Errorf("web: activity %q: %w", d.descriptor.Name, err)
-		}
-
 		mux.Handle(key, buildHandler(d))
 	}
 
 	return Group{mux: mux, defs: append([]Definition(nil), definitions...)}, nil
-}
-
-// validatePlaceholders cross-checks path's net/http ServeMux "{name}"
-// placeholders against bindings' path-sourced Params: every placeholder
-// must have a matching FromPath binding and every FromPath binding must
-// have a matching placeholder.
-func validatePlaceholders(path string, bindings []activity.ParamBinding) error {
-	placeholders := map[string]bool{}
-	for _, seg := range strings.Split(path, "/") {
-		if len(seg) < 2 || !strings.HasPrefix(seg, "{") || !strings.HasSuffix(seg, "}") {
-			continue
-		}
-		name := strings.TrimSuffix(strings.TrimPrefix(seg, "{"), "}")
-		name = strings.TrimSuffix(name, "...")
-		if name != "" {
-			placeholders[name] = true
-		}
-	}
-
-	pathBound := map[string]bool{}
-	for _, pb := range bindings {
-		if pb.Source == "path" {
-			pathBound[pb.Param.Name()] = true
-		}
-	}
-
-	for name := range placeholders {
-		if !pathBound[name] {
-			return fmt.Errorf("route path %q: placeholder %q has no FromPath binding", path, name)
-		}
-	}
-	for name := range pathBound {
-		if !placeholders[name] {
-			return fmt.Errorf("route path %q: FromPath binding %q has no matching placeholder", path, name)
-		}
-	}
-	return nil
 }
 
 // buildHandler returns the http.HandlerFunc that serves d's route: resolve
@@ -156,11 +103,10 @@ func buildHandler(d Definition) http.HandlerFunc {
 }
 
 // resolveRaw resolves one param.RawValue per binding from r, according to
-// its declared source ("query", "path" or "form"). Presence and value stay
+// its declared source ("query" or "form"). Presence and value stay
 // distinct throughout: an absent query/form key yields param.RawValue{}
 // (Present: false); an explicitly supplied empty value yields
-// Present: true with an empty Value. A matched net/http ServeMux path
-// placeholder is always present. A repeated query key or form field only
+// Present: true with an empty Value. A repeated query key or form field only
 // ever contributes its first value — see FromQuery and FromForm's doc
 // comments for the caller-facing statement of this limitation.
 func resolveRaw(r *http.Request, bindings []activity.ParamBinding) (map[param.AnyDescriptor]param.RawValue, error) {
@@ -182,8 +128,6 @@ func resolveRaw(r *http.Request, bindings []activity.ParamBinding) (map[param.An
 			} else {
 				raw[pb.Param] = param.RawValue{}
 			}
-		case "path":
-			raw[pb.Param] = param.RawValue{Value: r.PathValue(pb.Param.Name()), Present: true}
 		case "form":
 			if !formParsed {
 				if err := r.ParseForm(); err != nil {

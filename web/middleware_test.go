@@ -31,7 +31,7 @@ func TestMiddlewareRunsInDeclaredOrderWithFirstOutermost(t *testing.T) {
 	group, err := web.All(web.Activity("order", func(web.Context) web.Response {
 		trace = append(trace, "handler")
 		return web.Render(http.StatusOK, web.Text("ok"))
-	}, web.Get("/order"), recordingMiddleware(&trace, "auth"), recordingMiddleware(&trace, "audit")))
+	}, recordingMiddleware(&trace, "auth"), recordingMiddleware(&trace, "audit")))
 	if err != nil {
 		t.Fatalf("All: %v", err)
 	}
@@ -64,7 +64,7 @@ func TestMiddlewareCanShortCircuitWithAResponse(t *testing.T) {
 	group, err := web.All(web.Activity("gated", func(web.Context) web.Response {
 		handlerRan = true
 		return web.Render(http.StatusOK, web.Text("ok"))
-	}, web.Get("/gated"), shortCircuit))
+	}, shortCircuit))
 	if err != nil {
 		t.Fatalf("All: %v", err)
 	}
@@ -100,13 +100,13 @@ func TestParamsAreResolvedBeforeMiddlewareRuns(t *testing.T) {
 
 	group, err := web.All(web.Activity("probe-activity", func(ctx web.Context) web.Response {
 		return web.Render(http.StatusOK, web.Text("ok"))
-	}, web.Get("/probe"), web.FromQuery(limit), probe))
+	}, web.FromQuery(limit), probe))
 	if err != nil {
 		t.Fatalf("All: %v", err)
 	}
 
 	rec := httptest.NewRecorder()
-	group.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/probe", nil))
+	group.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/probe-activity", nil))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d, want 200 (body %q)", rec.Code, rec.Body.String())
 	}
@@ -125,7 +125,7 @@ func TestMiddlewareContributedParamIsIntrospectableWithoutExecution(t *testing.T
 		activity.ParamBinding{Param: flag, Source: "query"},
 	)
 
-	def := web.Activity("flagged", noopHandler, web.Get("/flagged"), mw)
+	def := web.Activity("flagged", noopHandler, mw)
 	d := def.Descriptor()
 
 	if len(d.Middleware) != 1 || d.Middleware[0].Name != "feature-flag" {
@@ -151,7 +151,7 @@ func TestUndeclaredParamReadIsRecoveredAsHTTP500(t *testing.T) {
 	group, err := web.All(web.Activity("boom", func(ctx web.Context) web.Response {
 		_ = param.Read(ctx.Context(), undeclared)
 		return web.Render(http.StatusOK, web.Text("unreachable"))
-	}, web.Get("/boom")))
+	}))
 	if err != nil {
 		t.Fatalf("All: %v", err)
 	}
@@ -171,7 +171,7 @@ func TestUnrelatedPanicIsRepanicked(t *testing.T) {
 	boom := errors.New("unrelated failure")
 	group, err := web.All(web.Activity("panics", func(web.Context) web.Response {
 		panic(boom)
-	}, web.Get("/panics")))
+	}))
 	if err != nil {
 		t.Fatalf("All: %v", err)
 	}
@@ -196,7 +196,7 @@ func TestUnrelatedPanicIsRepanicked(t *testing.T) {
 func TestNonErrorPanicIsRepanicked(t *testing.T) {
 	group, err := web.All(web.Activity("string-panic", func(web.Context) web.Response {
 		panic("not an error at all")
-	}, web.Get("/string-panic")))
+	}))
 	if err != nil {
 		t.Fatalf("All: %v", err)
 	}

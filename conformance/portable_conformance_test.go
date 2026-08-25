@@ -37,7 +37,7 @@ func TestPortableMiddlewareResolvesSharedParamAcrossWebAndCLI(t *testing.T) {
 	webGroup, err := web.All(web.Activity("list", func(ctx web.Context) web.Response {
 		gotWeb = param.Read(ctx.Context(), limit)
 		return web.Render(http.StatusOK, web.Text(strconv.Itoa(gotWeb)))
-	}, web.Get("/list"), mw))
+	}, mw))
 	if err != nil {
 		t.Fatalf("web.All: %v", err)
 	}

@@ -35,13 +35,13 @@ import (
 // on an Activity together with the external source it is bound to. In v1
 // there are no aliases: a Param's external name is always its own declared
 // name (param.AnyDescriptor.Name), and Source is an opaque, target-defined
-// tag (e.g. "query", "path", "form", "flag", "arg") supplied by the target
+// tag (e.g. "query", "form", "option", "arg") supplied by the target
 // package that declared the binding.
 type ParamBinding struct {
 	// Param is the bound Param's type-erased descriptor.
 	Param param.AnyDescriptor
 	// Source is the opaque, target-defined binding tag (e.g. "query",
-	// "path", "form", "flag", "arg").
+	// "form", "option", "arg").
 	Source string
 }
 
@@ -76,7 +76,7 @@ type Descriptor struct {
 // Builder accumulates an Activity's declarative configuration as Options are
 // applied to it. A target package constructs a Builder with New, applies the
 // caller-supplied Options (and its own target-specific declarations, such as
-// route or binding options) in declaration order, then calls Snapshot once
+// binding options) in declaration order, then calls Snapshot once
 // the target-specific handler is known to obtain the public, immutable
 // Descriptor. Builder itself is a construction-time type, not part of the
 // introspectable public contract.

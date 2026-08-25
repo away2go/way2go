@@ -2,14 +2,15 @@ package web
 
 import (
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/away2go/way2go/activity"
 )
 
 // reservedPrefix marks the name of a synthetic activity.Middleware entry
-// declared internally by this package's own route and binding options (see
-// route.go, binding.go). No Way2Go middleware author can produce a name
+// declared internally by this package's own binding options (see binding.go).
+// No Way2Go middleware author can produce a name
 // with this prefix through the public API (activity.NewWebMiddleware and
 // activity.NewMiddleware take a plain human-authored string, and nothing in
 // this package ever offers a caller control over this exact byte
@@ -18,16 +19,7 @@ import (
 // view.
 const reservedPrefix = "\x00web:"
 
-// routeBox is the private probe type Get/Post/... route options use to
-// carry their method and path out of the sealed activity.WebOption they
-// are forced to be built as (see option.go). It is never part of any
-// public signature.
-type routeBox struct {
-	method string
-	path   string
-}
-
-// bindingProbe is the private, empty probe type FromQuery/FromPath/FromForm
+// bindingProbe is the private, empty probe type FromQuery/FromForm
 // use as their activity.NewWebMiddleware type parameter. It carries no
 // data itself — the ParamBinding declarations passed to NewWebMiddleware
 // do the real work of declaring and binding Params on the Builder — it
@@ -47,8 +39,8 @@ type HandlerFunc func(ctx Context) Response
 // middleware declarations plus the Web-specific route. It is
 // introspectable without executing the Activity's handler.
 //
-// Middleware never contains the synthetic entries web.Get/Post/... or
-// web.FromQuery/FromPath/FromForm declare internally to carry their data
+// Middleware never contains the synthetic entries web.FromQuery/FromForm
+// declare internally to carry their data
 // through the sealed activity.WebOption contract — only Activity's own
 // caller-supplied middleware appears here, in declaration order.
 type Descriptor struct {
@@ -56,15 +48,11 @@ type Descriptor struct {
 	Description string
 	Params      []activity.ParamBinding
 	Middleware  []activity.Middleware
-	// Method and Path are the Activity's registered route, set by a route
-	// option such as Get. HasRoute reports whether a route option was
-	// applied at all: a route is not a core Activity invariant (see
-	// package doc and the design's Web target section), so a Definition
-	// without one is fully constructible and introspectable — All is what
-	// rejects it, at registration.
-	Method   string
-	Path     string
-	HasRoute bool
+	// Method and Path are the Activity's derived route. An Activity with a
+	// form binding uses POST; every other Activity uses GET. Path is the
+	// Activity name prefixed by a slash.
+	Method string
+	Path   string
 }
 
 // Definition is one declared Web Activity produced by Activity. It is
@@ -74,14 +62,6 @@ type Descriptor struct {
 type Definition struct {
 	descriptor Descriptor
 	handler    HandlerFunc
-	// err records the first construction-time conflict Activity's options
-	// produced (an activity.Builder.DeclareParam conflict surfaced through
-	// activity.NewWebMiddleware's panic path is caught nowhere here on
-	// purpose — see route.go/binding.go — this field instead holds
-	// web-package-native conflicts such as more than one route option).
-	// All surfaces it as a registration failure so Activity itself never
-	// needs to return an error.
-	err error
 }
 
 // Descriptor returns d's immutable effective descriptor.
@@ -95,25 +75,16 @@ func (d Definition) Name() string { return d.descriptor.Name }
 type activityConfig struct {
 	builder  *activity.Builder
 	wrappers []activity.Wrapper[HandlerFunc]
-	method   string
-	path     string
-	routeSet bool
-	firstErr error
-}
-
-func (c *activityConfig) addErr(err error) {
-	if err != nil && c.firstErr == nil {
-		c.firstErr = err
-	}
 }
 
 // Activity declares a Web Activity named name with handler and options,
 // building on activity.New(name, "web") and Builder.ApplyWeb. It accepts
 // only Web-capable options (Option, aliasing activity.WebOption) and always
-// succeeds: construction never executes handler, and a missing or
-// conflicting route fails registration (All), not construction, so a
-// routeless Definition remains fully introspectable — e.g. in a test that
-// only inspects Descriptor.
+// succeeds: construction never executes the handler. Its HTTP route is
+// derived from the Activity name and bindings: the path is "/" + name, and
+// the method is POST when at least one Param is bound from a form, otherwise
+// GET. This package deliberately models HTML GUIs rather than general HTTP
+// APIs, so callers cannot override either part of the route.
 func Activity(name string, handler HandlerFunc, options ...Option) Definition {
 	if handler == nil {
 		panic(fmt.Sprintf("web: activity %q: handler must not be nil", name))
@@ -128,21 +99,19 @@ func Activity(name string, handler HandlerFunc, options ...Option) Definition {
 		if w, ok := activity.WebWrapper[HandlerFunc](opt); ok {
 			cfg.wrappers = append(cfg.wrappers, w)
 		}
-		if rw, ok := activity.WebWrapper[*routeBox](opt); ok {
-			box := rw(&routeBox{})
-			if cfg.routeSet {
-				cfg.addErr(fmt.Errorf("web: activity %q: multiple routes declared (already %s %s, also got %s %s)",
-					name, cfg.method, cfg.path, box.method, box.path))
-			} else {
-				cfg.method, cfg.path, cfg.routeSet = box.method, box.path, true
-			}
-		}
 		// Binding options (bindingProbe) carry no data through their
 		// wrapper at all — their ParamBinding args, already applied above
 		// via b.ApplyWeb(opt), are the whole effect. Nothing to extract.
 	}
 
 	snap := b.Snapshot()
+	method := http.MethodGet
+	for _, pb := range snap.Params {
+		if pb.Source == "form" {
+			method = http.MethodPost
+			break
+		}
+	}
 
 	middleware := make([]activity.Middleware, 0, len(snap.Middleware))
 	for _, m := range snap.Middleware {
@@ -158,11 +127,9 @@ func Activity(name string, handler HandlerFunc, options ...Option) Definition {
 			Description: snap.Description,
 			Params:      snap.Params,
 			Middleware:  middleware,
-			Method:      cfg.method,
-			Path:        cfg.path,
-			HasRoute:    cfg.routeSet,
+			Method:      method,
+			Path:        "/" + snap.Name,
 		},
 		handler: activity.Chain(handler, cfg.wrappers...),
-		err:     cfg.firstErr,
 	}
 }

@@ -1,5 +1,5 @@
-// Package web implements Way2Go's net/http Web Activity target: explicit
-// routes, query/path/form Param bindings, middleware execution, Way2Go-owned
+// Package web implements Way2Go's net/http HTML GUI Activity target: derived
+// GET/POST routes, query/form Param bindings, middleware execution, Way2Go-owned
 // Context and Response types, a selective panic-recovery boundary and
 // registration into a validated, dependency-free http.Handler Group.
 package web
@@ -9,8 +9,8 @@ import "github.com/away2go/way2go/activity"
 // Option is every value valid to pass as a Web Activity's option: an
 // activity.Describe(...) call, a Web-only middleware built with
 // activity.NewWebMiddleware, the Web side of a portable middleware built
-// with activity.NewMiddleware, or one of this package's own route
-// (Get/Post/...) and binding (FromQuery/FromPath/FromForm) options.
+// with activity.NewMiddleware, or one of this package's own binding
+// (FromQuery/FromForm) options.
 //
 // Option is a direct alias for activity.WebOption — see that type's doc
 // comment for why the contract is closed to Way2Go-owned values. Kept under
@@ -20,15 +20,15 @@ import "github.com/away2go/way2go/activity"
 // — assigns here with no conversion (see
 // activity.TestDescribeIsUsableOnBothTargetContracts).
 //
-// Route and binding options (Get, FromQuery, ...) are themselves built on
+// Binding options (FromQuery, ...) are built on
 // activity.NewWebMiddleware: it is the only exported way to mint a new
 // value satisfying the sealed WebOption contract from outside package
 // activity. They carry their route/binding data out through the same
 // generic activity.WebWrapper[H] extraction mechanism real middleware uses
 // to hand back its Wrapper — just instantiated at a probe type private to
-// this package (see routeBox, bindingProbe in activity.go) instead of
-// HandlerFunc, so web.Activity can tell "this option is one of my own route
-// or binding declarations" apart from "this option carries a request
+// this package (see bindingProbe in activity.go) instead of HandlerFunc, so
+// web.Activity can tell "this option is one of my own binding declarations"
+// apart from "this option carries a request
 // wrapper" without any unsafe trick. Because they still go through
 // activity.NewWebMiddleware, they also declare a synthetic
 // activity.Middleware entry; web.Activity filters those (identified by the

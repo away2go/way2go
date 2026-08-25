@@ -31,7 +31,7 @@ var exampleLimit = param.Int("limit", param.Default(10), param.Describe("Maximum
 // activity.NewMiddleware: applied to a Web Activity it contributes
 // exampleLimit as a query binding and a Web-specific execution wrapper;
 // applied to a CLI Activity it contributes the very same exampleLimit
-// identity as a flag binding and an entirely independent CLI-specific
+// identity as an option binding and an entirely independent CLI-specific
 // wrapper. The returned activity.Portable value is passed directly at the
 // Activity call site below, like any other Option — there is no
 // Use(...) wrapper.
@@ -68,7 +68,7 @@ func withPagination() activity.Portable {
 			Wrap: func(next cli.HandlerFunc) cli.HandlerFunc {
 				return func(ctx context.Context) cli.Outcome { return next(ctx) }
 			},
-			Params: []activity.ParamBinding{{Param: exampleLimit, Source: "flag"}},
+			Params: []activity.ParamBinding{{Param: exampleLimit, Source: "option"}},
 		},
 	)
 }
@@ -79,7 +79,6 @@ var exampleList = web.Activity(
 		n := param.Read(ctx.Context(), exampleLimit)
 		return web.Render(http.StatusOK, web.Text(fmt.Sprintf("limit=%d", n)))
 	},
-	web.Get("/list"),
 	withPagination(),
 )
 
@@ -131,7 +130,6 @@ func Example_introspection() {
 		"search",
 		func(web.Context) web.Response { panic("handler must never run for introspection") },
 		activity.Describe("Searches for things."),
-		web.Get("/search"),
 		web.FromQuery(query),
 	)
 
@@ -218,7 +216,7 @@ func Example_promptAndFileParam() {
 		output.Printf(ctx, "path=%s limit=%d count=%d\n",
 			param.Read(ctx, outputPath), param.Read(ctx, limit), count)
 		return cli.OK()
-	}, cli.FromFlag(outputPath, limit))
+	}, cli.FromOptions(outputPath, limit))
 
 	app := cli.All(activity)
 	var out, errOut bytes.Buffer

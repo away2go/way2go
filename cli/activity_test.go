@@ -25,7 +25,7 @@ func TestDescriptorIntrospectableWithoutExecution(t *testing.T) {
 		return cli.OK()
 	},
 		activity.Describe("Greets someone."),
-		cli.FromArg(name),
+		cli.FromArgs(name),
 	)
 
 	d := def.Descriptor()
@@ -57,11 +57,11 @@ func TestActivityPanicsOnNilHandler(t *testing.T) {
 	cli.Activity("x", nil)
 }
 
-// TestFromArgRequiredAfterOptionalPanics proves API contract:
+// TestFromArgsRequiredAfterOptionalPanics proves API contract:
 // required positional Params must precede optional ones, validated at
 // registration (cli.Activity construction), even across two separate
-// FromArg calls.
-func TestFromArgRequiredAfterOptionalPanics(t *testing.T) {
+// FromArgs calls.
+func TestFromArgsRequiredAfterOptionalPanics(t *testing.T) {
 	optionalFirst := param.String("first", param.Default("x"))
 	requiredSecond := param.String("second")
 
@@ -75,16 +75,16 @@ func TestFromArgRequiredAfterOptionalPanics(t *testing.T) {
 			t.Fatalf("panic message = %q, want it to mention %q", msg, "second")
 		}
 	}()
-	cli.Activity("x", noop, cli.FromArg(optionalFirst), cli.FromArg(requiredSecond))
+	cli.Activity("x", noop, cli.FromArgs(optionalFirst), cli.FromArgs(requiredSecond))
 }
 
-// TestFromArgRequiredBeforeOptionalIsAccepted is the mirror-image proof:
-// required-then-optional across multiple FromArg calls is a valid ordering.
-func TestFromArgRequiredBeforeOptionalIsAccepted(t *testing.T) {
+// TestFromArgsRequiredBeforeOptionalIsAccepted is the mirror-image proof:
+// required-then-optional across multiple FromArgs calls is a valid ordering.
+func TestFromArgsRequiredBeforeOptionalIsAccepted(t *testing.T) {
 	required := param.String("first")
 	optional := param.String("second", param.Default("x"))
 
-	def := cli.Activity("x", noop, cli.FromArg(required), cli.FromArg(optional))
+	def := cli.Activity("x", noop, cli.FromArgs(required), cli.FromArgs(optional))
 	d := def.Descriptor()
 	if len(d.Params) != 2 {
 		t.Fatalf("Params = %+v, want 2 entries", d.Params)
@@ -104,15 +104,15 @@ func TestDuplicateExternalNameFromDistinctDescriptorsConflicts(t *testing.T) {
 			t.Fatal("expected panic for conflicting param names")
 		}
 	}()
-	cli.Activity("x", noop, cli.FromFlag(a), cli.FromFlag(b))
+	cli.Activity("x", noop, cli.FromOptions(a), cli.FromOptions(b))
 }
 
 // TestSameDescriptorSameBindingIsDeduplicated proves re-declaring the same
 // Param identity with the same source (e.g. reusing a shared package-level
-// descriptor in more than one FromFlag call) does not duplicate it.
+// descriptor in more than one FromOptions call) does not duplicate it.
 func TestSameDescriptorSameBindingIsDeduplicated(t *testing.T) {
 	limit := param.Int("limit", param.Default(1))
-	def := cli.Activity("x", noop, cli.FromFlag(limit), cli.FromFlag(limit))
+	def := cli.Activity("x", noop, cli.FromOptions(limit), cli.FromOptions(limit))
 	d := def.Descriptor()
 	if len(d.Params) != 1 {
 		t.Fatalf("Params = %+v, want exactly one entry after dedup", d.Params)
@@ -128,5 +128,5 @@ func TestSameDescriptorConflictingBindingIsRejected(t *testing.T) {
 			t.Fatal("expected panic for conflicting source binding")
 		}
 	}()
-	cli.Activity("x", noop, cli.FromFlag(shared), cli.FromArg(shared))
+	cli.Activity("x", noop, cli.FromOptions(shared), cli.FromArgs(shared))
 }

@@ -38,14 +38,14 @@ func TestIntrospectionNeverExecutesHandlerOrMiddleware(t *testing.T) {
 					return next(ctx)
 				}
 			},
-			Params: []activity.ParamBinding{{Param: limit, Source: "flag"}},
+			Params: []activity.ParamBinding{{Param: limit, Source: "option"}},
 		},
 	)
 
 	webDef := web.Activity("count", func(web.Context) web.Response {
 		handlerCalls++
 		return web.Render(http.StatusOK, web.Text("ok"))
-	}, web.Get("/count"), counting)
+	}, counting)
 
 	cliDef := cli.Activity("count", func(context.Context) cli.Outcome {
 		handlerCalls++
@@ -57,7 +57,7 @@ func TestIntrospectionNeverExecutesHandlerOrMiddleware(t *testing.T) {
 	webOnly := web.Activity("web-only", func(web.Context) web.Response {
 		handlerCalls++
 		return web.Render(http.StatusOK, web.Text("ok"))
-	}, web.Get("/web-only"))
+	})
 	cliOnly := cli.Activity("cli-only", func(context.Context) cli.Outcome {
 		handlerCalls++
 		return cli.OK()

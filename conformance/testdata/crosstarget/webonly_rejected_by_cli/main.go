@@ -26,7 +26,7 @@ func main() {
 	// claims to.
 	_ = web.Activity("secure", func(web.Context) web.Response {
 		return web.Render(http.StatusOK, web.Text("ok"))
-	}, web.Get("/secure"), csrf)
+	}, csrf)
 
 	// This is the line under test: a Web-only middleware Option must not
 	// satisfy cli.Option, so passing it to cli.Activity must fail to

@@ -16,7 +16,7 @@ import (
 	"github.com/away2go/way2go/param"
 )
 
-// TestFlagsResolveDefaultAndValidate proves API contract: FromFlag
+// TestFlagsResolveDefaultAndValidate proves API contract: FromOptions
 // binds a Param as a long-form flag using the Param's own required/default
 // and typed-validation semantics, all resolved before the handler runs.
 func TestFlagsResolveDefaultAndValidate(t *testing.T) {
@@ -31,7 +31,7 @@ func TestFlagsResolveDefaultAndValidate(t *testing.T) {
 	act := cli.Activity("list", func(ctx context.Context) cli.Outcome {
 		got = param.Read(ctx, limit)
 		return cli.OK()
-	}, cli.FromFlag(limit))
+	}, cli.FromOptions(limit))
 	app := cli.All(act)
 
 	var out, errBuf bytes.Buffer
@@ -71,7 +71,7 @@ func TestBoolFlagAcceptsBareForm(t *testing.T) {
 	act := cli.Activity("run", func(ctx context.Context) cli.Outcome {
 		got = param.Read(ctx, verbose)
 		return cli.OK()
-	}, cli.FromFlag(verbose))
+	}, cli.FromOptions(verbose))
 	app := cli.All(act)
 
 	var out, errBuf bytes.Buffer
@@ -113,7 +113,7 @@ func TestPositionalArgsResolveInDeclarationOrder(t *testing.T) {
 		gotFirst = param.Read(ctx, first)
 		gotSecond = param.Read(ctx, second)
 		return cli.OK()
-	}, cli.FromArg(first, second))
+	}, cli.FromArgs(first, second))
 	app := cli.All(act)
 
 	var out, errBuf bytes.Buffer
@@ -140,7 +140,7 @@ func TestPositionalArgsResolveInDeclarationOrder(t *testing.T) {
 // and v1 has no variadic positional mode to absorb the extra argument.
 func TestExtraPositionalArgumentFails(t *testing.T) {
 	one := param.String("one")
-	act := cli.Activity("echo", func(ctx context.Context) cli.Outcome { return cli.OK() }, cli.FromArg(one))
+	act := cli.Activity("echo", func(ctx context.Context) cli.Outcome { return cli.OK() }, cli.FromArgs(one))
 	app := cli.All(act)
 
 	var out, errBuf bytes.Buffer
@@ -159,7 +159,7 @@ func TestMissingRequiredFlagExitsTwo(t *testing.T) {
 	act := cli.Activity("greet", func(ctx context.Context) cli.Outcome {
 		executed = true
 		return cli.OK()
-	}, cli.FromFlag(name))
+	}, cli.FromOptions(name))
 	app := cli.All(act)
 
 	var out, errBuf bytes.Buffer
@@ -318,7 +318,7 @@ func TestMiddlewareOrderAndPreMiddlewareParamResolution(t *testing.T) {
 	act := cli.Activity("run", func(ctx context.Context) cli.Outcome {
 		trace = append(trace, "handler")
 		return cli.OK()
-	}, cli.FromFlag(limit), auth, audit)
+	}, cli.FromOptions(limit), auth, audit)
 
 	d := act.Descriptor()
 	if len(d.Middleware) != 2 || d.Middleware[0].Name != "auth" || d.Middleware[1].Name != "audit" {
@@ -425,7 +425,7 @@ func (markedInputError) InputError() bool { return true }
 func TestExecuteWithNilWritersDoesNotPanic(t *testing.T) {
 	t.Run("input error with nil err writer", func(t *testing.T) {
 		name := param.String("name")
-		act := cli.Activity("greet", func(ctx context.Context) cli.Outcome { return cli.OK() }, cli.FromFlag(name))
+		act := cli.Activity("greet", func(ctx context.Context) cli.Outcome { return cli.OK() }, cli.FromOptions(name))
 		app := cli.All(act)
 
 		var out bytes.Buffer
@@ -457,7 +457,7 @@ func TestConcurrentExecutionsDoNotCrossContaminateOutput(t *testing.T) {
 	act := cli.Activity("say", func(ctx context.Context) cli.Outcome {
 		output.Println(ctx, param.Read(ctx, message))
 		return cli.OK()
-	}, cli.FromFlag(message))
+	}, cli.FromOptions(message))
 	app := cli.All(act)
 
 	const n = 25
